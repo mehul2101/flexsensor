@@ -1,0 +1,61 @@
+#include "BluetoothSerial.h"
+
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error Bluetooth is not enabled! Please run `make menuconfig` to enable it
+#endif
+
+#if !defined(CONFIG_BT_SPP_ENABLED)
+#error Serial Bluetooth not available or not enabled. It is only available for the ESP32 chip.
+#endif
+
+BluetoothSerial SerialBT;
+const int ADC_pin = 34;    
+const float VCC = 5;      
+const float fixed_resistor = 4700.0; 
+const int ledPin =  25;
+String message = "";
+char incomingChar;
+char outgoingMsg;
+
+void setup() {
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(115200);
+  SerialBT.begin("ESP32test"); //Bluetooth device name
+  Serial.println("The device started, now you can pair it with Bluetooth!");
+}
+
+void loop() {
+  if (SerialBT.available()){
+    incomingChar = SerialBT.read();
+    if (incomingChar != '\n'){
+      message += String(incomingChar);
+    }
+    else{
+      if (message =="led_on"){
+        digitalWrite(ledPin, HIGH);
+        outgoingMsg = 'h';
+        SerialBT.println("LED turned on");
+      }
+      else if (message =="led_off"){
+        digitalWrite(ledPin, LOW);
+        outgoingMsg = 'l';
+        SerialBT.println("LED turned off");
+      }
+      message = "";
+    }
+  }
+  
+  int flex_ADC = analogRead(ADC_pin);
+  float flex_voltage = flex_ADC * VCC / 1023.0;
+  float flex_resistance = (fixed_resistor * (VCC / flex_voltage - 1.0))/1000;
+  SerialBT.print("ADC value: ");
+  SerialBT.println(flex_ADC);
+  SerialBT.print("Voltage value: " );
+  SerialBT.println(flex_voltage);
+  SerialBT.print("Resistance value: ");
+  SerialBT.print(flex_resistance);
+  SerialBT.println(" kilo-ohm");
+
+  SerialBT.println();
+  delay(20);
+}
