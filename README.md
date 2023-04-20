@@ -1,2 +1,2 @@
 # flexsensor
-amity_intership
+intership
